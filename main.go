@@ -11,6 +11,8 @@ import (
 func main() {
 	r := gin.Default()
 
+	r.Static("/uploads", "./uploads")
+
 	config.ConnectDB()
 	config.DB.AutoMigrate(
 		&models.User{},
@@ -24,6 +26,7 @@ func main() {
 	routes.ProductRoutes(r)
 	routes.CartRoutes(r)
 	routes.OrderRoutes(r)
+	routes.RegisterAdminRoutes(r)
 
 	r.Run(":8080")
 }

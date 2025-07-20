@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -13,27 +13,26 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-	// Load environment variables from .env file (optional in Docker)
-	_ = godotenv.Load()
-
-	// Read environment variables
-	host := os.Getenv("DB_HOST")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("DB_PASSWORD")
-	dbname := os.Getenv("DB_NAME")
-	port := os.Getenv("DB_PORT")
-
-	// Create DSN string
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		host, user, password, dbname, port,
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
 	)
 
-	// Connect to PostgreSQL using GORM
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("❌ Failed to connect to database: ", err)
+	var err error
+	for i := 0; i < 10; i++ {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err == nil {
+			log.Println("✅ Database connected")
+			return
+		}
+
+		log.Printf("⏳ Waiting for database... (%d/10)\n", i+1)
+		time.Sleep(2 * time.Second)
 	}
 
-	DB = database
-	log.Println("✅ Database connected")
+	log.Fatal("❌ Failed to connect to database after retries:", err)
 }
